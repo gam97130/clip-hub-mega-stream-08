@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { getVideos, addVideo, getSeries, getSeriesVideos, getSeriesById } from '../utils/videoStorage';
+import { getVideos, addVideo, getSeries, getSeriesVideos, getSeriesById, addSeries, deleteSeries } from '../utils/videoStorage';
 import { Video, Series } from '../types/video';
 import VideoList from '../components/VideoList';
 import VideoPlayer from '../components/VideoPlayer';
@@ -9,6 +9,7 @@ import SeriesList from '../components/SeriesList';
 import SeriesDetail from '../components/SeriesDetail';
 import { Toaster } from '@/components/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from 'sonner';
 
 const Index = () => {
   const [videos, setVideos] = useState<Video[]>([]);
@@ -28,6 +29,30 @@ const Index = () => {
   const handleAddVideo = (newVideo: Omit<Video, 'id' | 'addedAt'>) => {
     const video = addVideo(newVideo);
     setVideos([...videos, video]);
+  };
+  
+  const handleAddSeries = (newSeries: Omit<Series, 'id'>) => {
+    const series = addSeries(newSeries);
+    setSeries(prevSeries => [...prevSeries, series]);
+  };
+
+  const handleDeleteSeries = (id: string) => {
+    const success = deleteSeries(id);
+    if (success) {
+      setSeries(prevSeries => prevSeries.filter(series => series.id !== id));
+      
+      // Si la série actuellement sélectionnée est celle qu'on supprime
+      if (selectedSeries && selectedSeries.id === id) {
+        setSelectedSeries(null);
+      }
+      
+      // Mettre à jour la liste des vidéos (liens de série supprimés)
+      setVideos(getVideos());
+      
+      toast.success('Série supprimée avec succès');
+    } else {
+      toast.error('Erreur lors de la suppression de la série');
+    }
   };
   
   const handleSelectVideo = (video: Video) => {
@@ -101,7 +126,12 @@ const Index = () => {
               </TabsContent>
               
               <TabsContent value="series" className="mt-0">
-                <SeriesList series={series} onSelectSeries={handleSelectSeries} />
+                <SeriesList 
+                  series={series} 
+                  onSelectSeries={handleSelectSeries} 
+                  onAddSeries={handleAddSeries}
+                  onDeleteSeries={handleDeleteSeries}
+                />
               </TabsContent>
             </Tabs>
           )}

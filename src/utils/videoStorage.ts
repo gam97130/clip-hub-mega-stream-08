@@ -182,6 +182,35 @@ export const addSeries = (series: Omit<Series, 'id'>): Series => {
 };
 
 /**
+ * Supprime une série par son ID et met à jour les vidéos associées
+ */
+export const deleteSeries = (id: string): boolean => {
+  // Vérifier si la série existe
+  const series = getSeries();
+  const newSeries = series.filter(s => s.id !== id);
+
+  if (newSeries.length === series.length) {
+    return false; // Série non trouvée
+  }
+
+  // Mettre à jour les vidéos qui appartiennent à cette série
+  const videos = getVideos();
+  const updatedVideos = videos.map(video => {
+    if (video.seriesId === id) {
+      // Retirer l'association à la série
+      const { seriesId, episodeNumber, ...rest } = video;
+      return rest;
+    }
+    return video;
+  });
+
+  // Sauvegarder les changements
+  saveSeries(newSeries);
+  saveVideos(updatedVideos);
+  return true;
+};
+
+/**
  * Obtient les vidéos d'une série
  */
 export const getSeriesVideos = (seriesId: string): Video[] => {

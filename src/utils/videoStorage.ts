@@ -1,7 +1,8 @@
 
-import { Video, VideoCategory } from '../types/video';
+import { Video, VideoCategory, Series } from '../types/video';
 
 const STORAGE_KEY = 'clipHub_videos';
+const SERIES_STORAGE_KEY = 'clipHub_series';
 
 // Sample videos
 const defaultVideos: Video[] = [
@@ -21,7 +22,30 @@ const defaultVideos: Video[] = [
     url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
     thumbnail: 'https://storage.googleapis.com/gtv-videos-bucket/sample/images/ElephantsDream.jpg',
     category: 'Films',
-    addedAt: Date.now() - 86400000
+    addedAt: Date.now() - 86400000,
+    seriesId: 'sample-series',
+    episodeNumber: 1
+  },
+  {
+    id: '3',
+    title: 'Elephant Dream - Partie 2',
+    description: 'Suite du premier film libre de Blender Foundation',
+    url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+    thumbnail: 'https://storage.googleapis.com/gtv-videos-bucket/sample/images/ElephantsDream.jpg',
+    category: 'Films',
+    addedAt: Date.now() - 86400000 / 2,
+    seriesId: 'sample-series',
+    episodeNumber: 2
+  }
+];
+
+// Exemple de séries
+const defaultSeries: Series[] = [
+  {
+    id: 'sample-series',
+    title: 'Elephant Dream - Série',
+    description: 'Série de films de Blender Foundation',
+    thumbnail: 'https://storage.googleapis.com/gtv-videos-bucket/sample/images/ElephantsDream.jpg'
   }
 ];
 
@@ -34,6 +58,7 @@ export const getVideos = (): Video[] => {
   if (!storedVideos) {
     // Initialiser avec des vidéos par défaut lors de la première utilisation
     saveVideos(defaultVideos);
+    saveSeries(defaultSeries);
     return defaultVideos;
   }
   
@@ -101,4 +126,75 @@ export const filterVideosByCategory = (videos: Video[], category: VideoCategory)
   }
   
   return videos.filter(video => video.category === category);
+};
+
+/**
+ * Recherche des vidéos par terme de recherche
+ */
+export const searchVideos = (videos: Video[], searchTerm: string): Video[] => {
+  if (!searchTerm.trim()) {
+    return videos;
+  }
+  
+  const lowerSearchTerm = searchTerm.toLowerCase();
+  return videos.filter(
+    video => 
+      video.title.toLowerCase().includes(lowerSearchTerm) ||
+      video.description.toLowerCase().includes(lowerSearchTerm) ||
+      video.category.toLowerCase().includes(lowerSearchTerm)
+  );
+};
+
+/**
+ * Récupère toutes les séries
+ */
+export const getSeries = (): Series[] => {
+  const storedSeries = localStorage.getItem(SERIES_STORAGE_KEY);
+  
+  if (!storedSeries) {
+    // Initialiser avec des séries par défaut
+    saveSeries(defaultSeries);
+    return defaultSeries;
+  }
+  
+  return JSON.parse(storedSeries);
+};
+
+/**
+ * Sauvegarde toutes les séries
+ */
+const saveSeries = (series: Series[]): void => {
+  localStorage.setItem(SERIES_STORAGE_KEY, JSON.stringify(series));
+};
+
+/**
+ * Ajoute une nouvelle série
+ */
+export const addSeries = (series: Omit<Series, 'id'>): Series => {
+  const existingSeries = getSeries();
+  const newSeries: Series = {
+    ...series,
+    id: Date.now().toString()
+  };
+  
+  saveSeries([...existingSeries, newSeries]);
+  return newSeries;
+};
+
+/**
+ * Obtient les vidéos d'une série
+ */
+export const getSeriesVideos = (seriesId: string): Video[] => {
+  const videos = getVideos();
+  return videos
+    .filter(video => video.seriesId === seriesId)
+    .sort((a, b) => (a.episodeNumber || 0) - (b.episodeNumber || 0));
+};
+
+/**
+ * Obtient la série par ID
+ */
+export const getSeriesById = (id: string): Series | undefined => {
+  const series = getSeries();
+  return series.find(s => s.id === id);
 };

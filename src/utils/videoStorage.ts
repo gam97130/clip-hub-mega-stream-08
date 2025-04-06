@@ -1,4 +1,3 @@
-
 import { Video, VideoCategory, Series } from '../types/video';
 
 const STORAGE_KEY = 'clipHub_videos';

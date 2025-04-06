@@ -5,19 +5,26 @@ import { Video, VideoCategory } from '../types/video';
 import { filterVideosByCategory, getCategories, searchVideos } from '../utils/videoStorage';
 import { Button } from '@/components/ui/button';
 import SearchBar from './SearchBar';
+import { toast } from 'sonner';
 
 interface VideoListProps {
   videos: Video[];
   onSelectVideo: (video: Video) => void;
+  onDeleteVideo: (id: string) => void;
 }
 
-const VideoList: React.FC<VideoListProps> = ({ videos, onSelectVideo }) => {
+const VideoList: React.FC<VideoListProps> = ({ videos, onSelectVideo, onDeleteVideo }) => {
   const [activeCategory, setActiveCategory] = useState<VideoCategory>('Tous');
   const [searchTerm, setSearchTerm] = useState('');
   const categories = getCategories();
   
   const filteredByCategory = filterVideosByCategory(videos, activeCategory);
   const filteredVideos = searchVideos(filteredByCategory, searchTerm);
+
+  const handleDeleteVideo = (id: string) => {
+    onDeleteVideo(id);
+    toast.success('Vidéo supprimée avec succès');
+  };
 
   return (
     <div className="space-y-6 animate-slide-up">
@@ -54,7 +61,8 @@ const VideoList: React.FC<VideoListProps> = ({ videos, onSelectVideo }) => {
             <VideoCard 
               key={video.id} 
               video={video} 
-              onClick={onSelectVideo} 
+              onClick={onSelectVideo}
+              onDelete={handleDeleteVideo}
             />
           ))}
         </div>

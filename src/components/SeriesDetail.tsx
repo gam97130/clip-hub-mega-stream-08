@@ -3,17 +3,18 @@ import React from 'react';
 import { Series, Video } from '../types/video';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Play } from 'lucide-react';
-import VideoCard from './VideoCard';
+import { ArrowLeft, Play, Trash2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface SeriesDetailProps {
   series: Series;
   videos: Video[];
   onBack: () => void;
   onSelectVideo: (video: Video) => void;
+  onDeleteVideo: (id: string) => void;
 }
 
-const SeriesDetail: React.FC<SeriesDetailProps> = ({ series, videos, onBack, onSelectVideo }) => {
+const SeriesDetail: React.FC<SeriesDetailProps> = ({ series, videos, onBack, onSelectVideo, onDeleteVideo }) => {
   return (
     <div className="animate-fade-in">
       <Button 
@@ -62,7 +63,10 @@ const SeriesDetail: React.FC<SeriesDetailProps> = ({ series, videos, onBack, onS
             key={video.id} 
             className="overflow-hidden bg-clip-gray border-clip-lightGray animate-fade-in flex"
           >
-            <div className="w-1/4 aspect-video overflow-hidden bg-clip-dark">
+            <div 
+              className="w-1/4 aspect-video overflow-hidden bg-clip-dark cursor-pointer"
+              onClick={() => onSelectVideo(video)}
+            >
               {video.thumbnail ? (
                 <img 
                   src={video.thumbnail} 
@@ -76,11 +80,45 @@ const SeriesDetail: React.FC<SeriesDetailProps> = ({ series, videos, onBack, onS
               )}
             </div>
             <CardContent className="p-4 flex-1 flex flex-col justify-between">
-              <div>
-                <h4 className="font-semibold text-md text-white">
-                  {video.episodeNumber ? `Épisode ${video.episodeNumber}: ` : ''}{video.title}
-                </h4>
-                <p className="text-sm text-gray-400 line-clamp-2 mt-1">{video.description}</p>
+              <div className="flex justify-between">
+                <div onClick={() => onSelectVideo(video)}>
+                  <h4 className="font-semibold text-md text-white">
+                    {video.episodeNumber ? `Épisode ${video.episodeNumber}: ` : ''}{video.title}
+                  </h4>
+                  <p className="text-sm text-gray-400 line-clamp-2 mt-1">{video.description}</p>
+                </div>
+                
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-red-500 hover:text-red-600 hover:bg-red-500/10 p-1 h-auto ml-2"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="bg-clip-dark border-clip-lightGray">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="text-white">Supprimer l'épisode</AlertDialogTitle>
+                      <AlertDialogDescription className="text-gray-400">
+                        Êtes-vous sûr de vouloir supprimer l'épisode "{video.title}" ? Cette action ne peut pas être annulée.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel className="bg-clip-gray text-white hover:bg-clip-lightGray">
+                        Annuler
+                      </AlertDialogCancel>
+                      <AlertDialogAction 
+                        className="bg-red-500 hover:bg-red-600 text-white"
+                        onClick={() => onDeleteVideo(video.id)}
+                      >
+                        Supprimer
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
               <Button 
                 onClick={() => onSelectVideo(video)}

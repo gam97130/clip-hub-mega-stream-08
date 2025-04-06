@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { getVideos, addVideo, getSeries, getSeriesVideos, getSeriesById, addSeries, deleteSeries } from '../utils/videoStorage';
+import { getVideos, addVideo, getSeries, getSeriesVideos, getSeriesById, addSeries, deleteSeries, deleteVideo } from '../utils/videoStorage';
 import { Video, Series } from '../types/video';
 import VideoList from '../components/VideoList';
 import VideoPlayer from '../components/VideoPlayer';
@@ -54,6 +54,22 @@ const Index = () => {
       toast.error('Erreur lors de la suppression de la série');
     }
   };
+
+  const handleDeleteVideo = (id: string) => {
+    const success = deleteVideo(id);
+    if (success) {
+      setVideos(prevVideos => prevVideos.filter(video => video.id !== id));
+      
+      // Si la vidéo actuellement sélectionnée est celle qu'on supprime
+      if (selectedVideo && selectedVideo.id === id) {
+        setSelectedVideo(null);
+      }
+      
+      toast.success('Vidéo supprimée avec succès');
+    } else {
+      toast.error('Erreur lors de la suppression de la vidéo');
+    }
+  };
   
   const handleSelectVideo = (video: Video) => {
     setSelectedVideo(video);
@@ -103,6 +119,7 @@ const Index = () => {
               videos={seriesVideos} 
               onBack={handleBack}
               onSelectVideo={handleSelectVideo}
+              onDeleteVideo={handleDeleteVideo}
             />
           ) : (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -122,7 +139,11 @@ const Index = () => {
               </TabsList>
               
               <TabsContent value="videos" className="mt-0">
-                <VideoList videos={videos} onSelectVideo={handleSelectVideo} />
+                <VideoList 
+                  videos={videos} 
+                  onSelectVideo={handleSelectVideo} 
+                  onDeleteVideo={handleDeleteVideo}
+                />
               </TabsContent>
               
               <TabsContent value="series" className="mt-0">

@@ -1,11 +1,18 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Video } from '../types/video';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, AlertCircle } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Share2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { toast } from 'sonner';
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface VideoPlayerProps {
   video: Video;
@@ -13,6 +20,8 @@ interface VideoPlayerProps {
 }
 
 const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onBack }) => {
+  const [isSharing, setIsSharing] = useState(false);
+
   const formattedDate = formatDistanceToNow(new Date(video.addedAt), { 
     addSuffix: true,
     locale: fr
@@ -38,6 +47,34 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onBack }) => {
   };
 
   const embedUrl = isMegaLink ? getEmbedUrl() : null;
+
+  const handleShare = async () => {
+    setIsSharing(true);
+    
+    try {
+      // Generate a shareable URL - for this example, we'll use the current URL
+      const shareUrl = window.location.href;
+      
+      // Try to use the Web Share API if available
+      if (navigator.share) {
+        await navigator.share({
+          title: video.title,
+          text: video.description,
+          url: shareUrl,
+        });
+        toast.success('Contenu partagé');
+      } else {
+        // Fallback: copy to clipboard
+        await navigator.clipboard.writeText(shareUrl);
+        toast.success('Lien copié dans le presse-papier');
+      }
+    } catch (error) {
+      console.error('Erreur de partage:', error);
+      toast.error('Impossible de partager cette vidéo');
+    } finally {
+      setIsSharing(false);
+    }
+  };
 
   return (
     <div className="animate-fade-in">
@@ -88,9 +125,29 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onBack }) => {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl md:text-2xl text-white">{video.title}</CardTitle>
-            <span className="text-xs px-2 py-1 rounded-full bg-clip-purple/20 text-clip-lightPurple">
-              {video.category}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs px-2 py-1 rounded-full bg-clip-purple/20 text-clip-lightPurple">
+                {video.category}
+              </span>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="text-gray-400 hover:text-white hover:bg-clip-lightGray/20"
+                      onClick={handleShare}
+                      disabled={isSharing}
+                    >
+                      <Share2 className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Partager</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
           </div>
           <CardDescription className="text-gray-400 text-sm">
             Ajouté {formattedDate}
@@ -108,6 +165,16 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onBack }) => {
             onClick={() => window.open(video.url, '_blank')}
           >
             Ouvrir dans un nouvel onglet
+          </Button>
+          
+          <Button
+            variant="ghost"
+            className="text-gray-400 hover:text-white hover:bg-clip-lightGray/20"
+            onClick={handleShare}
+            disabled={isSharing}
+          >
+            <Share2 className="mr-2 h-4 w-4" />
+            Partager
           </Button>
         </CardFooter>
       </Card>

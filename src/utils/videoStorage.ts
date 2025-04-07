@@ -88,6 +88,51 @@ export const getVideoById = (id: string): Video | undefined => {
 };
 
 /**
+ * Vérifie si un URL de vidéo existe déjà
+ */
+export const videoUrlExists = (url: string): boolean => {
+  const videos = getVideos();
+  return videos.some(video => video.url === url);
+};
+
+/**
+ * Importe une vidéo depuis un fichier et gère les conflits
+ */
+export const importVideo = (videoData: Omit<Video, 'id'>): Video | null => {
+  // Vérifier si l'URL existe déjà
+  if (videoUrlExists(videoData.url)) {
+    // Vidéo avec la même URL existe déjà
+    return null;
+  }
+  
+  // Ajouter la vidéo
+  return addVideo(videoData);
+};
+
+/**
+ * Vérifie si une série avec le même titre existe déjà
+ */
+export const seriesTitleExists = (title: string): Series | undefined => {
+  const series = getSeries();
+  return series.find(s => s.title.toLowerCase() === title.toLowerCase());
+};
+
+/**
+ * Importe une série depuis un fichier et gère les conflits
+ */
+export const importSeries = (seriesData: Omit<Series, 'id'>): Series | null => {
+  // Vérifier si le titre existe déjà
+  const existingSeries = seriesTitleExists(seriesData.title);
+  if (existingSeries) {
+    // Une série avec le même titre existe déjà
+    return existingSeries;
+  }
+  
+  // Ajouter la série
+  return addSeries(seriesData);
+};
+
+/**
  * Supprime une vidéo par son ID
  */
 export const deleteVideo = (id: string): boolean => {

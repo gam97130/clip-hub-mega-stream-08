@@ -7,6 +7,7 @@ import VideoPlayer from '../components/VideoPlayer';
 import AddVideoForm from '../components/AddVideoForm';
 import SeriesList from '../components/SeriesList';
 import SeriesDetail from '../components/SeriesDetail';
+import ImportDataDialog from '../components/ImportDataDialog';
 import { Toaster } from '@/components/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
@@ -18,12 +19,17 @@ const Index = () => {
   const [selectedSeries, setSelectedSeries] = useState<Series | null>(null);
   const [activeTab, setActiveTab] = useState<string>('videos');
   
-  useEffect(() => {
-    // Charger les vidéos et les séries depuis le localStorage
+  // Function to reload data
+  const reloadData = () => {
     const loadedVideos = getVideos();
     const loadedSeries = getSeries();
     setVideos(loadedVideos);
     setSeries(loadedSeries);
+  };
+  
+  useEffect(() => {
+    // Charger les vidéos et les séries depuis le localStorage
+    reloadData();
   }, []);
   
   const handleAddVideo = (newVideo: Omit<Video, 'id' | 'addedAt'>) => {
@@ -100,7 +106,12 @@ const Index = () => {
             <h1 className="text-2xl md:text-3xl font-bold text-white">
               ClipHub <span className="text-clip-purple">MegaStream</span>
             </h1>
-            {!selectedVideo && !selectedSeries && <AddVideoForm onAddVideo={handleAddVideo} />}
+            {!selectedVideo && !selectedSeries && (
+              <div className="flex gap-2">
+                <ImportDataDialog onImportComplete={reloadData} />
+                <AddVideoForm onAddVideo={handleAddVideo} />
+              </div>
+            )}
           </div>
           
           {!selectedVideo && !selectedSeries && (

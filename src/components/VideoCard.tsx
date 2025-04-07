@@ -6,7 +6,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { getSeriesById } from '../utils/videoStorage';
 import { Button } from '@/components/ui/button';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Film } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface VideoCardProps {
@@ -24,12 +24,15 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onClick, onDelete }) => {
   // Si la vidéo fait partie d'une série, récupérer les informations de la série
   const series = video.seriesId ? getSeriesById(video.seriesId) : undefined;
 
+  // Détermine si c'est un lien Mega
+  const isMegaLink = video.url.includes('mega.nz');
+
   return (
     <Card 
       className="overflow-hidden hover-scale cursor-pointer bg-clip-gray border-clip-lightGray animate-fade-in"
     >
       <div 
-        className="aspect-video overflow-hidden bg-clip-dark"
+        className="aspect-video overflow-hidden bg-clip-dark relative"
         onClick={() => onClick(video)}
       >
         {video.thumbnail ? (
@@ -43,12 +46,27 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onClick, onDelete }) => {
             <span className="text-clip-lightPurple">Pas d'aperçu</span>
           </div>
         )}
+        
+        {/* Badge pour vidéo Mega */}
+        {isMegaLink && (
+          <div className="absolute top-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
+            MEGA
+          </div>
+        )}
+        
+        {/* Badge pour épisode */}
+        {video.episodeNumber && (
+          <div className="absolute bottom-2 left-2 bg-clip-purple text-white text-xs px-2 py-1 rounded-full flex items-center">
+            <Film className="h-3 w-3 mr-1" />
+            Ep. {video.episodeNumber}
+          </div>
+        )}
       </div>
       <CardContent className="p-4">
         <div className="flex justify-between items-start">
           <div className="flex-1" onClick={() => onClick(video)}>
             <h3 className="font-semibold text-lg mb-1 truncate text-white">
-              {video.episodeNumber ? `E${video.episodeNumber}: ` : ''}{video.title}
+              {video.title}
             </h3>
             <p className="text-sm text-gray-400 mb-2 line-clamp-2">{video.description}</p>
           </div>

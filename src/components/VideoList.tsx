@@ -21,10 +21,35 @@ const VideoList: React.FC<VideoListProps> = ({ videos, onSelectVideo, onDeleteVi
   const filteredByCategory = filterVideosByCategory(videos, activeCategory);
   const filteredVideos = searchVideos(filteredByCategory, searchTerm);
 
+  // Organise les vidéos pour montrer les épisodes ensemble
+  const organizeVideos = (videos: Video[]) => {
+    // Trie les vidéos par série et numéro d'épisode
+    return [...videos].sort((a, b) => {
+      // D'abord groupe par série
+      if (a.seriesId && b.seriesId) {
+        if (a.seriesId !== b.seriesId) {
+          return a.seriesId.localeCompare(b.seriesId);
+        }
+        // Ensuite par numéro d'épisode
+        return (a.episodeNumber || 0) - (b.episodeNumber || 0);
+      }
+      
+      // Les vidéos sans série à la fin
+      if (a.seriesId && !b.seriesId) return -1;
+      if (!a.seriesId && b.seriesId) return 1;
+      
+      // Par défaut, trier par date d'ajout (du plus récent au plus ancien)
+      return b.addedAt - a.addedAt;
+    });
+  };
+
   const handleDeleteVideo = (id: string) => {
     onDeleteVideo(id);
     toast.success('Vidéo supprimée avec succès');
   };
+
+  // Organise les vidéos filtrées
+  const organizedVideos = organizeVideos(filteredVideos);
 
   return (
     <div className="space-y-6 animate-slide-up">
@@ -51,13 +76,13 @@ const VideoList: React.FC<VideoListProps> = ({ videos, onSelectVideo, onDeleteVi
         </div>
       </div>
 
-      {filteredVideos.length === 0 ? (
+      {organizedVideos.length === 0 ? (
         <div className="flex flex-col items-center justify-center p-8 bg-clip-gray rounded-lg border border-clip-lightGray">
           <p className="text-gray-400 mb-4">Aucune vidéo trouvée</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredVideos.map((video) => (
+          {organizedVideos.map((video) => (
             <VideoCard 
               key={video.id} 
               video={video} 

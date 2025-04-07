@@ -3,7 +3,7 @@ import React from 'react';
 import { Video } from '../types/video';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, AlertCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -18,6 +18,27 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onBack }) => {
     locale: fr
   });
 
+  // Déterminer si c'est un lien Mega
+  const isMegaLink = video.url.includes('mega.nz');
+
+  // Créer l'URL d'intégration pour Mega si c'est un lien Mega
+  const getEmbedUrl = () => {
+    if (isMegaLink) {
+      // Extraire l'ID de fichier du lien Mega
+      const megaMatch = video.url.match(/\/file\/([^#]+)#([^$]+)/);
+      if (megaMatch && megaMatch.length >= 3) {
+        const fileId = megaMatch[1];
+        const fileKey = megaMatch[2];
+        return `https://mega.nz/embed/${fileId}#${fileKey}`;
+      }
+      // Sinon, utiliser le lien direct pour l'iframe
+      return video.url.replace('/file/', '/embed/');
+    }
+    return null;
+  };
+
+  const embedUrl = isMegaLink ? getEmbedUrl() : null;
+
   return (
     <div className="animate-fade-in">
       <Button 
@@ -30,14 +51,38 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onBack }) => {
       </Button>
       
       <Card className="bg-clip-gray border-clip-lightGray overflow-hidden">
-        <div className="video-container">
-          <video 
-            src={video.url} 
-            controls 
-            autoPlay 
-            className="w-full"
-            poster={video.thumbnail}
-          />
+        <div className="aspect-video overflow-hidden bg-clip-dark">
+          {isMegaLink ? (
+            embedUrl ? (
+              <iframe
+                src={embedUrl}
+                className="w-full h-full border-0"
+                allowFullScreen
+                allow="autoplay"
+                title={video.title}
+              ></iframe>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full">
+                <AlertCircle className="h-12 w-12 text-yellow-500 mb-4" />
+                <p className="text-white text-center">Le format du lien Mega n'est pas valide.</p>
+                <Button
+                  variant="outline" 
+                  className="mt-4 bg-clip-gray text-gray-300 hover:text-white hover:bg-clip-gray"
+                  onClick={() => window.open(video.url, '_blank')}
+                >
+                  Ouvrir sur Mega
+                </Button>
+              </div>
+            )
+          ) : (
+            <video 
+              src={video.url} 
+              controls 
+              autoPlay 
+              className="w-full h-full"
+              poster={video.thumbnail}
+            ></video>
+          )}
         </div>
         
         <CardHeader>

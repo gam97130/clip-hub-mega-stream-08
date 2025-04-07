@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Dialog, 
   DialogContent, 
@@ -7,16 +7,18 @@ import {
   DialogTitle, 
   DialogTrigger,
   DialogFooter,
-  DialogClose
+  DialogClose,
+  DialogDescription
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getCategories } from '../utils/videoStorage';
-import { toast } from '@/components/ui/use-toast';
+import { getCategories, getSeries } from '../utils/videoStorage';
+import { toast } from 'sonner';
 import { VideoCategory } from '../types/video';
+import { Series } from '../types/video';
 
 interface AddVideoFormProps {
   onAddVideo: (video: { 
@@ -25,6 +27,8 @@ interface AddVideoFormProps {
     url: string; 
     thumbnail?: string; 
     category: string;
+    seriesId?: string;
+    episodeNumber?: number;
   }) => void;
 }
 
@@ -34,8 +38,17 @@ const AddVideoForm: React.FC<AddVideoFormProps> = ({ onAddVideo }) => {
   const [url, setUrl] = useState('');
   const [thumbnail, setThumbnail] = useState('');
   const [category, setCategory] = useState<VideoCategory>('Films');
+  const [seriesId, setSeriesId] = useState<string>('');
+  const [episodeNumber, setEpisodeNumber] = useState<string>('');
   const [isOpen, setIsOpen] = useState(false);
+  const [availableSeries, setAvailableSeries] = useState<Series[]>([]);
+  
   const categories = getCategories().filter(cat => cat !== 'Tous');
+
+  // Charger la liste des séries disponibles
+  useEffect(() => {
+    setAvailableSeries(getSeries());
+  }, [isOpen]); // Recharger quand la modal s'ouvre
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,7 +65,6 @@ const AddVideoForm: React.FC<AddVideoFormProps> = ({ onAddVideo }) => {
     // Validation simple de l'URL
     if (!url.startsWith('http')) {
       toast({
-        title: "URL invalide",
         description: "L'URL doit commencer par http:// ou https://",
         variant: "destructive"
       });
@@ -64,7 +76,9 @@ const AddVideoForm: React.FC<AddVideoFormProps> = ({ onAddVideo }) => {
       description,
       url,
       thumbnail,
-      category
+      category,
+      ...(seriesId && { seriesId }),
+      ...(episodeNumber && { episodeNumber: parseInt(episodeNumber) })
     });
     
     // Réinitialiser le formulaire
@@ -73,12 +87,11 @@ const AddVideoForm: React.FC<AddVideoFormProps> = ({ onAddVideo }) => {
     setUrl('');
     setThumbnail('');
     setCategory('Films');
+    setSeriesId('');
+    setEpisodeNumber('');
     setIsOpen(false);
     
-    toast({
-      title: "Vidéo ajoutée",
-      description: "Votre vidéo a été ajoutée avec succès",
-    });
+    toast.success("Vidéo ajoutée avec succès");
   };
 
   return (
@@ -91,6 +104,9 @@ const AddVideoForm: React.FC<AddVideoFormProps> = ({ onAddVideo }) => {
       <DialogContent className="bg-clip-gray border-clip-lightGray text-white sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Ajouter une nouvelle vidéo</DialogTitle>
+          <DialogDescription className="text-gray-400">
+            Remplissez les informations pour ajouter une nouvelle vidéo
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -127,6 +143,7 @@ const AddVideoForm: React.FC<AddVideoFormProps> = ({ onAddVideo }) => {
               className="bg-clip-dark border-clip-lightGray text-white"
               required
             />
+            <p className="text-xs text-gray-400">Note: Pour les liens Mega, utilisez le lien direct au format https://mega.nz/file/...</p>
           </div>
           
           <div className="space-y-2">
@@ -158,6 +175,41 @@ const AddVideoForm: React.FC<AddVideoFormProps> = ({ onAddVideo }) => {
               </SelectContent>
             </Select>
           </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="series">Série (optionnel)</Label>
+            <Select 
+              value={seriesId} 
+              onValueChange={setSeriesId}
+            >
+              <SelectTrigger className="bg-clip-dark border-clip-lightGray text-white">
+                <SelectValue placeholder="Sélectionner une série (optionnel)" />
+              </SelectTrigger>
+              <SelectContent className="bg-clip-dark border-clip-lightGray text-white">
+                <SelectItem value="">Aucune série</SelectItem>
+                {availableSeries.map((series) => (
+                  <SelectItem key={series.id} value={series.id}>
+                    {series.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {seriesId && (
+            <div className="space-y-2">
+              <Label htmlFor="episodeNumber">Numéro d'épisode</Label>
+              <Input 
+                id="episodeNumber" 
+                type="number"
+                min="1"
+                value={episodeNumber}
+                onChange={(e) => setEpisodeNumber(e.target.value)}
+                placeholder="1"
+                className="bg-clip-dark border-clip-lightGray text-white"
+              />
+            </div>
+          )}
           
           <DialogFooter className="pt-4">
             <DialogClose asChild>

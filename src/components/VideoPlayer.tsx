@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Video } from '../types/video';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, AlertCircle, Share2 } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Share2, Download } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -13,6 +13,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { getSeriesById } from '../utils/videoStorage';
 
 interface VideoPlayerProps {
   video: Video;
@@ -21,6 +22,7 @@ interface VideoPlayerProps {
 
 const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onBack }) => {
   const [isSharing, setIsSharing] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const formattedDate = formatDistanceToNow(new Date(video.addedAt), { 
     addSuffix: true,
@@ -73,6 +75,54 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onBack }) => {
       toast.error('Impossible de partager cette vidéo');
     } finally {
       setIsSharing(false);
+    }
+  };
+
+  const handleDownload = async () => {
+    setIsDownloading(true);
+    
+    try {
+      // Récupérer les données de la série si cette vidéo fait partie d'une série
+      let seriesData = null;
+      if (video.seriesId) {
+        seriesData = getSeriesById(video.seriesId);
+      }
+      
+      // Créer un objet avec toutes les données pertinentes
+      const downloadData = {
+        video: {
+          ...video,
+          addedAt: new Date(video.addedAt).toISOString() // Convertir timestamp en format lisible
+        },
+        series: seriesData
+      };
+      
+      // Convertir en JSON
+      const jsonData = JSON.stringify(downloadData, null, 2);
+      
+      // Créer un blob avec les données
+      const blob = new Blob([jsonData], { type: 'application/json' });
+      
+      // Créer un lien de téléchargement
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${video.title.replace(/\s+/g, '_')}_data.json`;
+      
+      // Déclencher le téléchargement
+      document.body.appendChild(a);
+      a.click();
+      
+      // Nettoyer
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast.success('Données téléchargées avec succès');
+    } catch (error) {
+      console.error('Erreur de téléchargement:', error);
+      toast.error('Impossible de télécharger les données');
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -136,14 +186,14 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onBack }) => {
                       size="icon"
                       variant="ghost"
                       className="text-gray-400 hover:text-white hover:bg-clip-lightGray/20"
-                      onClick={handleShare}
-                      disabled={isSharing}
+                      onClick={handleDownload}
+                      disabled={isDownloading}
                     >
-                      <Share2 className="h-4 w-4" />
+                      <Download className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Partager</p>
+                    <p>Télécharger les données</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -170,11 +220,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onBack }) => {
           <Button
             variant="ghost"
             className="text-gray-400 hover:text-white hover:bg-clip-lightGray/20"
-            onClick={handleShare}
-            disabled={isSharing}
+            onClick={handleDownload}
+            disabled={isDownloading}
           >
-            <Share2 className="mr-2 h-4 w-4" />
-            Partager
+            <Download className="mr-2 h-4 w-4" />
+            Télécharger les données
           </Button>
         </CardFooter>
       </Card>

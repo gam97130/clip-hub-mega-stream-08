@@ -38,7 +38,7 @@ const AddVideoForm: React.FC<AddVideoFormProps> = ({ onAddVideo }) => {
   const [url, setUrl] = useState('');
   const [thumbnail, setThumbnail] = useState('');
   const [category, setCategory] = useState<VideoCategory>('Films');
-  const [seriesId, setSeriesId] = useState<string>('');
+  const [seriesId, setSeriesId] = useState<string | null>(null);
   const [episodeNumber, setEpisodeNumber] = useState<string>('');
   const [isOpen, setIsOpen] = useState(false);
   const [availableSeries, setAvailableSeries] = useState<Series[]>([]);
@@ -56,8 +56,7 @@ const AddVideoForm: React.FC<AddVideoFormProps> = ({ onAddVideo }) => {
     if (!title.trim() || !url.trim()) {
       toast({
         title: "Erreur",
-        description: "Le titre et l'URL sont obligatoires",
-        variant: "destructive"
+        description: "Le titre et l'URL sont obligatoires"
       });
       return;
     }
@@ -65,8 +64,7 @@ const AddVideoForm: React.FC<AddVideoFormProps> = ({ onAddVideo }) => {
     // Validation simple de l'URL
     if (!url.startsWith('http')) {
       toast({
-        description: "L'URL doit commencer par http:// ou https://",
-        variant: "destructive"
+        description: "L'URL doit commencer par http:// ou https://"
       });
       return;
     }
@@ -87,7 +85,7 @@ const AddVideoForm: React.FC<AddVideoFormProps> = ({ onAddVideo }) => {
     setUrl('');
     setThumbnail('');
     setCategory('Films');
-    setSeriesId('');
+    setSeriesId(null);
     setEpisodeNumber('');
     setIsOpen(false);
     
@@ -179,14 +177,14 @@ const AddVideoForm: React.FC<AddVideoFormProps> = ({ onAddVideo }) => {
           <div className="space-y-2">
             <Label htmlFor="series">Série (optionnel)</Label>
             <Select 
-              value={seriesId} 
+              value={seriesId || undefined} 
               onValueChange={setSeriesId}
             >
               <SelectTrigger className="bg-clip-dark border-clip-lightGray text-white">
                 <SelectValue placeholder="Sélectionner une série (optionnel)" />
               </SelectTrigger>
               <SelectContent className="bg-clip-dark border-clip-lightGray text-white">
-                <SelectItem value="">Aucune série</SelectItem>
+                <SelectItem value="none">Aucune série</SelectItem>
                 {availableSeries.map((series) => (
                   <SelectItem key={series.id} value={series.id}>
                     {series.title}
@@ -196,7 +194,7 @@ const AddVideoForm: React.FC<AddVideoFormProps> = ({ onAddVideo }) => {
             </Select>
           </div>
           
-          {seriesId && (
+          {seriesId && seriesId !== "none" && (
             <div className="space-y-2">
               <Label htmlFor="episodeNumber">Numéro d'épisode</Label>
               <Input 
